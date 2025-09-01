@@ -1,18 +1,17 @@
 {
-  "name": "@playwright/mcp",
-  "version": "0.0.36",
-  "description": "Playwright Tools for MCP",
+  "name": "skgeodesy-mcp",
+  "version": "1.0.0",
+  "description": "MCP server and Chrome extension for accessing Slovak cadastre (skgeodesy.sk)",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/microsoft/playwright-mcp.git"
+    "url": "git+https://github.com/blazejrypak/skgeodesy-mcp.git"
   },
-  "homepage": "https://playwright.dev",
   "engines": {
     "node": ">=18"
   },
   "author": {
-    "name": "Microsoft Corporation"
+    "name": "Blažej Rypák"
   },
   "license": "Apache-2.0",
   "scripts": {
@@ -72,6 +71,16 @@
     "typescript": "^5.8.2"
   },
   "bin": {
-    "mcp-server-playwright": "cli.js"
-  }
+    "mcp-server-skgeodesy": "cli.js"
+  },
+  "files": [
+    "lib",
+    "cli.js",
+    "index.js",
+    "index.d.ts",
+    "LICENSE",
+    "NOTICE",
+    "README.md"
+  ], 
+  "keywords": ["mcp", "playwright", "skgeodesy", "cadastre", "extension"]
 }
