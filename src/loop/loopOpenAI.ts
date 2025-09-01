@@ -127,7 +127,7 @@ export class OpenAIDelegate implements LLMDelegate {
     // Extract tool calls and add assistant message to generic conversation
     const toolCalls = message.tool_calls || [];
     const genericToolCalls: LLMToolCall[] = toolCalls.map(toolCall => {
-      const functionCall = toolCall.function;
+      const functionCall = (toolCall as any)?.function;
       return {
         name: functionCall.name,
         arguments: JSON.parse(functionCall.arguments),

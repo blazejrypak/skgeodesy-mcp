@@ -1,0 +1,5 @@
+{
+    "prettier.resolveGlobalModules": true,
+    "prettier.requireConfig": true,
+    "prettier.prettierPath": "./node_modules/prettier"
+}

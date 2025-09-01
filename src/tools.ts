@@ -26,6 +26,7 @@ import mouse from './tools/mouse.js';
 import navigate from './tools/navigate.js';
 import network from './tools/network.js';
 import pdf from './tools/pdf.js';
+import kataster from './tools/skgeodesy/kataster.js';
 import snapshot from './tools/snapshot.js';
 import tabs from './tools/tabs.js';
 import screenshot from './tools/screenshot.js';
@@ -48,6 +49,7 @@ export const allTools: Tool<any>[] = [
   ...network,
   ...mouse,
   ...pdf,
+  ...kataster,
   ...screenshot,
   ...snapshot,
   ...tabs,
@@ -56,5 +58,6 @@ export const allTools: Tool<any>[] = [
 ];
 
 export function filteredTools(config: FullConfig) {
-  return allTools.filter(tool => tool.capability.startsWith('core') || config.capabilities?.includes(tool.capability));
+  return allTools.filter(tool => tool.capability.startsWith('core') || tool.capability.startsWith('kataster') || config.capabilities?.includes(tool.capability));
 }
+
