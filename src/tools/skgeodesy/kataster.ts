@@ -87,7 +87,7 @@ const kataster = defineTool({
 
         for (const parcel of EKNParcels) {
             const url = createEKNCadastrialURL(cadastrialUnitCode, parcel.parcelNumber);
-            const parcelInfo = await getParcelInfo(url, {
+            const html = await getParcelInfo(url, {
                 context,
                 params,
                 response
@@ -102,14 +102,14 @@ const kataster = defineTool({
             parcelsInfo.push({
                 parcelNumber: parcel.parcelNumber,
                 parcelType: parcel.parcelType,
-                parcelInfo: parcelInfo,
+                html: html,
                 mapkaURL: mapkaURL
             });
         }
 
         for (const parcelInfo of parcelsInfo) {
             response.addResult(
-                `Parcel ${parcelInfo.parcelNumber} (${parcelInfo.parcelType}) info: ${parcelInfo.parcelInfo.html} at ${parcelInfo.mapkaURL}`
+                `Parcel ${parcelInfo.parcelNumber} (${parcelInfo.parcelType}) info: ${parcelInfo.html} at ${parcelInfo.mapkaURL}`
             );
         }
     }
