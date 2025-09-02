@@ -1,3 +1,4 @@
+import fs from 'fs';
 import removeAccents from 'remove-accents';
 import {
     CADASTRIAL_API_URL_CKNParcels,
@@ -5,6 +6,11 @@ import {
     MAPKA_API_SUGGEST_URL,
     MAPKA_BASE_URL
 } from './constants.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const createCadastrialUnitCodeUrl = (city: string) => {
     return `${MAPKA_API_SUGGEST_URL}?q=${encodeURIComponent(removeAccents(city))}`;
@@ -27,4 +33,20 @@ const createEKNCadastrialURL = (cadastralUnitCode: string, parcelNumber: string)
     );
 };
 
-export { createCadastrialUnitCodeUrl, createMapkaURL, createCKNCadastrialURL, createEKNCadastrialURL };
+const getPlainPdfTemplate = () => {
+    return fs.readFileSync(path.join(__dirname, 'pdfTemplate.hbs'), 'utf8');
+};  
+
+
+export const saveHtmlToFile = (html: string, fileName: string) => {
+    console.log(path.join(process.cwd(), fileName));
+    fs.writeFileSync(path.join(process.cwd(), fileName), html);
+};
+
+export const saveParsedJsonToFile =  (json: any, fileName: string) => {
+    console.log(path.join(process.cwd(), fileName));
+    fs.writeFileSync(path.join(process.cwd(), fileName), JSON.stringify(json, null, 2));
+};
+
+export { createCadastrialUnitCodeUrl, createCKNCadastrialURL, createEKNCadastrialURL, createMapkaURL, getPlainPdfTemplate };
+

@@ -1,9 +1,10 @@
 import { z } from "zod";
-import { createCadastrialUnitCodeUrl, createCKNCadastrialURL, createEKNCadastrialURL } from "./utils.js";
+import { createCadastrialUnitCodeUrl, createCKNCadastrialURL, createEKNCadastrialURL, getPlainPdfTemplate } from "./utils.js";
 import { Context } from "../../context.js";
 import type { Response } from '../../response.js';
 import { CAPTCHA_URL } from "./constants.js";
 import {parse} from "node-html-parser";
+import Handlebars from "handlebars";
 
 type ToolParams = {
     context: Context;
@@ -75,4 +76,25 @@ export const getParcelInfo = async (url: string, toolParams: ToolParams): Promis
     const bodyContent = root.querySelector("body")?.innerHTML || "";
 
     return bodyContent;
+}
+
+
+export const getParcelInfoFullHtml = async (url: string, toolParams: ToolParams): Promise<string> => {
+    const { context } = toolParams;
+    const tab = await context.ensureTab();
+    const r = await tab.page.request.get(url, {
+        maxRedirects: 0,
+    });
+
+    const html = await r.text();
+    const root = parse(html);
+    const bodyContent = root.innerHTML;
+
+    return bodyContent;
+}
+
+export const generateHtml = (data: any) => {
+    const templateHTML = getPlainPdfTemplate();
+    const template = Handlebars.compile(templateHTML);
+    return template(data);
 }

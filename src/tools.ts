@@ -27,11 +27,13 @@ import navigate from './tools/navigate.js';
 import network from './tools/network.js';
 import pdf from './tools/pdf.js';
 import kataster from './tools/skgeodesy/kataster.js';
+import titleDeedByParcel from './tools/skgeodesy/titleDeedByParcel.js';
 import snapshot from './tools/snapshot.js';
 import tabs from './tools/tabs.js';
 import screenshot from './tools/screenshot.js';
 import wait from './tools/wait.js';
 import verify from './tools/verify.js';
+import exportParcelsToPDF from './tools/skgeodesy/exportParcelsToPDF.js';
 
 import type { Tool } from './tools/tool.js';
 import type { FullConfig } from './config.js';
@@ -50,6 +52,8 @@ export const allTools: Tool<any>[] = [
   ...mouse,
   ...pdf,
   ...kataster,
+  ...titleDeedByParcel,
+  ...exportParcelsToPDF,
   ...screenshot,
   ...snapshot,
   ...tabs,

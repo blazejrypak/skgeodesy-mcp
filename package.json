@@ -1,11 +1,11 @@
 {
   "name": "skgeodesy-mcp",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "MCP server and Chrome extension for accessing Slovak cadastre (skgeodesy.sk)",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/blazejrypak/skgeodesy-mcp.git"
+    "url": "git+https://github.com/blazejrypak/skgeodesy-mcp/tree/develop"
   },
   "engines": {
     "node": ">=18"
@@ -27,7 +27,9 @@
     "wtest": "playwright test --project=webkit",
     "run-server": "node lib/browserServer.js",
     "clean": "rm -rf lib",
-    "npm-publish": "npm run clean && npm run build && npm run test && npm publish"
+    "npm-publish": "npm run clean && npm run build && npm run test && npm publish",
+    "postbuild": "cp -r src/tools/skgeodesy/pdfTemplate.hbs lib/tools/skgeodesy/pdfTemplate.hbs",
+    "dev": "nodemon --watch dist --exec \"node cli.js --port 8931 --extension\""
   },
   "exports": {
     "./package.json": "./package.json",
@@ -41,6 +43,8 @@
     "commander": "^13.1.0",
     "debug": "^4.4.1",
     "dotenv": "^17.2.0",
+    "downloads-folder": "^3.0.3",
+    "handlebars": "^4.7.8",
     "mime": "^4.0.7",
     "node-html-parser": "^7.0.1",
     "playwright": "^1.55.0",
@@ -66,6 +70,7 @@
     "eslint": "^9.19.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-notice": "^1.0.0",
+    "nodemon": "^3.1.10",
     "openai": "^5.10.2",
     "prettier": "^3.6.2",
     "typescript": "^5.8.2"
@@ -81,6 +86,12 @@
     "LICENSE",
     "NOTICE",
     "README.md"
-  ], 
-  "keywords": ["mcp", "playwright", "skgeodesy", "cadastre", "extension"]
+  ],
+  "keywords": [
+    "mcp",
+    "playwright",
+    "skgeodesy",
+    "cadastre",
+    "extension"
+  ]
 }
