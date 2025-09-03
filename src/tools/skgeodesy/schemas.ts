@@ -1,11 +1,4 @@
-import { z } from 'zod';
-import { defineTool } from '../tool.js';
-import { generateHtml, getCadastrialUnitCode, getParcelInfo, initializeBrowser } from './helpers.js';
-import { createCKNCadastrialURL, createEKNCadastrialURL, createMapkaURL, saveHtmlToFile, saveParsedJsonToFile } from './utils.js';
-import downloadsDir from 'downloads-folder'
-import path from 'path';
-
-const __downloadsDir = downloadsDir();
+import z from 'zod';
 
 export const DateTimeISO = z.string().datetime({ offset: true });
 
@@ -25,6 +18,7 @@ export const Owner = z.object({
 export const Parcel = z.object({
   parcelNumber: z.string().min(1).describe("Parcelné číslo, napr. '353/1'"),
   parcelType: z.enum(['C', 'E']).describe("Either 'C' (for CKN) or 'E' (for EKN) parcels"),
+  mapkaURL: z.string().describe('Mapka URL of the parcel'),
   city: z.string().describe('The city where the parcel is located'),
   areaM2: z.number().int().nonnegative(),
   landUseType: z
@@ -75,7 +69,7 @@ export const QuickStats = z.object({
 });
 
 /** ---- Hlavný sumár pre prvú stranu ---- */
-export const inputSchema = z
+export const parsedTitleDeeds = z
   .object({
     header: Header,
     quickStats: QuickStats,
@@ -104,99 +98,3 @@ export const inputSchema = z
       });
     }
   });
-
-const exportParcelsToPDF = defineTool({
-  capability: 'kataster',
-
-  schema: {
-    name: 'export_parcels_to_pdf',
-    title: 'Export Parcels to PDF',
-    description: `Exports parcels to PDF`,
-    inputSchema: inputSchema,
-    type: 'readOnly'
-  },
-
-  handle: async (context, params, response) => {
-    await saveParsedJsonToFile(params, 'params.json');
-    const { parcels } = params;
-
-    if (parcels.length === 0 || parcels[0].city === undefined) {
-      response.addResult('No parcels to export or city is not provided');
-      return;
-    }
-
-    await initializeBrowser({
-      context,
-      params,
-      response
-    });
-
-    const cadastrialUnitCode = await getCadastrialUnitCode(parcels[0].city, {
-      context,
-      params,
-      response
-    });
-
-    let parcelsInfo: any[] = [];
-
-    const CKNParcels = parcels.filter((parcel) => parcel.parcelType === 'C');
-
-    for (const parcel of CKNParcels) {
-      const url = createCKNCadastrialURL(cadastrialUnitCode, parcel.parcelNumber);
-      const html = await getParcelInfo(url, {
-        context,
-        params,
-        response
-      });
-      const mapkaURL = createMapkaURL(cadastrialUnitCode, parcel.parcelNumber, parcel.parcelType);
-
-      parcelsInfo.push({
-        parcelNumber: parcel.parcelNumber,
-        parcelType: parcel.parcelType,
-        html: html,
-        mapkaURL: mapkaURL
-      });
-    }
-
-    const EKNParcels = parcels.filter((parcel) => parcel.parcelType === 'E');
-
-    for (const parcel of EKNParcels) {
-      const url = createEKNCadastrialURL(cadastrialUnitCode, parcel.parcelNumber);
-      const html = await getParcelInfo(url, {
-        context,
-        params,
-        response
-      });
-
-      const mapkaURL = createMapkaURL(cadastrialUnitCode, parcel.parcelNumber, parcel.parcelType);
-
-      parcelsInfo.push({
-        parcelNumber: parcel.parcelNumber,
-        parcelType: parcel.parcelType,
-        html: html,
-        mapkaURL: mapkaURL
-      });
-    }
-
-    const generatedHtml = generateHtml({
-        ...params,
-        lvs: parcelsInfo.map((parcel) => parcel.html?.toString() ?? ''),
-        createdAt: new Date().toLocaleString()
-    })
-
-    saveHtmlToFile(generatedHtml, 'generated.html');
-
-    try {
-        // save generated html to pdf
-        const tab = await context.ensureTab();
-        await tab.page.setContent(generatedHtml, { waitUntil: 'load' });
-        await tab.page.pdf({ path: path.join(__downloadsDir, 'generated.pdf') });
-        response.addResult(`Generated PDF saved to ${path.join(__downloadsDir, 'generated.pdf')}`);
-    } catch (error) {
-        response.addError((error as Error).message);
-    }
-
-  }
-});
-
-export default [exportParcelsToPDF];

@@ -64,7 +64,7 @@ export const getCadastrialUnitCode = async (city: string, toolParams: ToolParams
     return cadastralUnitCode;
 }
 
-export const getParcelInfo = async (url: string, toolParams: ToolParams): Promise<string> => {
+export const getParcelInfo = async (url: string, toolParams: ToolParams): Promise<{ html: string, text: string }> => {
     const { context } = toolParams;
     const tab = await context.ensureTab();
     const r = await tab.page.request.get(url, {
@@ -73,9 +73,13 @@ export const getParcelInfo = async (url: string, toolParams: ToolParams): Promis
 
     const html = await r.text();
     const root = parse(html);
-    const bodyContent = root.querySelector("body")?.innerHTML || "";
+    const bodyContent = root.querySelector("body")?.textContent || "";
+    const bodyHtml = root.querySelector("body")?.innerHTML || "";
 
-    return bodyContent;
+    return {
+        html: bodyHtml,
+        text: bodyContent
+    };
 }
 
 

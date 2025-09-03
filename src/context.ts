@@ -52,6 +52,9 @@ export class Context {
   private _closeBrowserContextPromise: Promise<void> | undefined;
   private _runningToolName: string | undefined;
   private _abortController = new AbortController();
+  
+  // Simple storage for tool data
+  private _storage: Map<string, any> = new Map();
 
   constructor(options: ContextOptions) {
     this.tools = options.tools;
@@ -116,6 +119,27 @@ export class Context {
 
   async outputFile(name: string): Promise<string> {
     return outputFile(this.config, this._clientInfo.rootPath, name);
+  }
+
+  // Storage methods for tool data
+  setStorage(key: string, value: any): void {
+    this._storage.set(key, value);
+  }
+
+  getStorage(key: string): any {
+    return this._storage.get(key);
+  }
+
+  hasStorage(key: string): boolean {
+    return this._storage.has(key);
+  }
+
+  clearStorage(key?: string): void {
+    if (key) {
+      this._storage.delete(key);
+    } else {
+      this._storage.clear();
+    }
   }
 
   private _onPageCreated(page: playwright.Page) {
