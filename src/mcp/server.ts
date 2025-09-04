@@ -17,15 +17,15 @@
 import debug from 'debug';
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListToolsRequestSchema, CreateMessageRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { httpAddressToString, installHttpTransport, startHttpServer } from './http.js';
 import { InProcessTransport } from './inProcessTransport.js';
 
-import type { Tool, CallToolResult, CallToolRequest, Root } from '@modelcontextprotocol/sdk/types.js';
+import type { Tool, CallToolResult, CallToolRequest, Root, CreateMessageRequest, CreateMessageResult } from '@modelcontextprotocol/sdk/types.js';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 export type { Server } from '@modelcontextprotocol/sdk/server/index.js';
-export type { Tool, CallToolResult, CallToolRequest, Root } from '@modelcontextprotocol/sdk/types.js';
+export type { Tool, CallToolResult, CallToolRequest, Root, CreateMessageRequest, CreateMessageResult } from '@modelcontextprotocol/sdk/types.js';
 
 const serverDebug = debug('pw:mcp:server');
 const errorsDebug = debug('pw:mcp:errors');
@@ -37,6 +37,7 @@ export interface ServerBackend {
   listTools(): Promise<Tool[]>;
   callTool(name: string, args: CallToolRequest['params']['arguments']): Promise<CallToolResult>;
   serverClosed?(server: Server): void;
+  createMessage?(request: CreateMessageRequest): Promise<CreateMessageResult>;
 }
 
 export type ServerBackendFactory = {
@@ -62,6 +63,7 @@ export function createServer(name: string, version: string, backend: ServerBacke
   const server = new Server({ name, version }, {
     capabilities: {
       tools: {},
+      sampling: {},
     }
   });
 
@@ -89,6 +91,20 @@ export function createServer(name: string, version: string, backend: ServerBacke
         content: [{ type: 'text', text: '### Result\n' + String(error) }],
         isError: true,
       };
+    }
+  });
+
+  server.setRequestHandler(CreateMessageRequestSchema, async request => {
+    serverDebug('createMessage', request);
+    await initializedPromise;
+
+    if (!backend.createMessage)
+      throw new Error('Sampling not supported by this backend');
+
+    try {
+      return await backend.createMessage(request);
+    } catch (error) {
+      throw new Error(`Sampling failed: ${String(error)}`);
     }
   });
   addServerListener(server, 'initialized', async () => {

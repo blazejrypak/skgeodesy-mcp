@@ -35,6 +35,7 @@ type ContextOptions = {
   browserContextFactory: BrowserContextFactory;
   sessionLog: SessionLog | undefined;
   clientInfo: ClientInfo;
+  server?: any; // MCP Server instance
 };
 
 export class Context {
@@ -47,12 +48,13 @@ export class Context {
   private _tabs: Tab[] = [];
   private _currentTab: Tab | undefined;
   private _clientInfo: ClientInfo;
+  private _server: any; // MCP Server instance
 
   private static _allContexts: Set<Context> = new Set();
   private _closeBrowserContextPromise: Promise<void> | undefined;
   private _runningToolName: string | undefined;
   private _abortController = new AbortController();
-  
+
   // Simple storage for tool data
   private _storage: Map<string, any> = new Map();
 
@@ -63,12 +65,17 @@ export class Context {
     this.options = options;
     this._browserContextFactory = options.browserContextFactory;
     this._clientInfo = options.clientInfo;
+    this._server = options.server;
     testDebug('create context');
     Context._allContexts.add(this);
   }
 
   static async disposeAll() {
     await Promise.all([...Context._allContexts].map(context => context.dispose()));
+  }
+
+  getServer(): any {
+    return this._server;
   }
 
   tabs(): Tab[] {
@@ -135,11 +142,11 @@ export class Context {
   }
 
   clearStorage(key?: string): void {
-    if (key) {
+    if (key)
       this._storage.delete(key);
-    } else {
+    else
       this._storage.clear();
-    }
+
   }
 
   private _onPageCreated(page: playwright.Page) {

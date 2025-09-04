@@ -34,6 +34,7 @@ export class BrowserServerBackend implements ServerBackend {
   private _sessionLog: SessionLog | undefined;
   private _config: FullConfig;
   private _browserContextFactory: BrowserContextFactory;
+  private _server: mcpServer.Server | undefined;
 
   constructor(config: FullConfig, factory: BrowserContextFactory) {
     this._config = config;
@@ -42,6 +43,7 @@ export class BrowserServerBackend implements ServerBackend {
   }
 
   async initialize(server: mcpServer.Server, clientVersion: mcpServer.ClientVersion, roots: mcpServer.Root[]): Promise<void> {
+    this._server = server;
     let rootPath: string | undefined;
     if (roots.length > 0) {
       const firstRootUri = roots[0]?.uri;
@@ -55,6 +57,7 @@ export class BrowserServerBackend implements ServerBackend {
       browserContextFactory: this._browserContextFactory,
       sessionLog: this._sessionLog,
       clientInfo: { ...clientVersion, rootPath },
+      server: this._server,
     });
   }
 
@@ -84,5 +87,9 @@ export class BrowserServerBackend implements ServerBackend {
 
   serverClosed() {
     void this._context?.dispose().catch(logUnhandledError);
+  }
+
+  getServer(): mcpServer.Server | undefined {
+    return this._server;
   }
 }

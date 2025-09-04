@@ -18,7 +18,7 @@ import debug from 'debug';
 import { z } from 'zod';
 
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { PingRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { PingRequestSchema, CreateMessageResultSchema } from '@modelcontextprotocol/sdk/types.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 
@@ -96,6 +96,22 @@ export class MDBBackend implements mcpServer.ServerBackend {
     else
       mdbDebug('client call result', result);
     return result;
+  }
+
+  async createMessage(request: mcpServer.CreateMessageRequest): Promise<mcpServer.CreateMessageResult> {
+    mdbDebug('createMessage', request);
+
+    // Forward the sampling request to the current client
+    const client = this._client();
+    const result = await client.request(
+        {
+          method: 'sampling/createMessage',
+          params: request.params,
+        },
+        CreateMessageResultSchema
+    );
+
+    return result as mcpServer.CreateMessageResult;
   }
 
   private _client(): Client {

@@ -19,9 +19,9 @@ import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { ListRootsRequestSchema, PingRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { ListRootsRequestSchema, PingRequestSchema, CreateMessageResultSchema } from '@modelcontextprotocol/sdk/types.js';
 
-import type { ServerBackend, ClientVersion, Root, Server } from './server.js';
+import type { ServerBackend, ClientVersion, Root, Server, CreateMessageRequest, CreateMessageResult } from './server.js';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import type { Tool, CallToolResult, CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 
@@ -66,6 +66,22 @@ export class ProxyBackend implements ServerBackend {
       name,
       arguments: args,
     }) as CallToolResult;
+  }
+
+  async createMessage(request: CreateMessageRequest): Promise<CreateMessageResult> {
+    if (!this._currentClient)
+      throw new Error('No client available for sampling');
+
+    // Forward the sampling request to the current client
+    const result = await this._currentClient.request(
+        {
+          method: 'sampling/createMessage',
+          params: request.params,
+        },
+        CreateMessageResultSchema
+    );
+
+    return result as CreateMessageResult;
   }
 
   serverClosed?(): void {
