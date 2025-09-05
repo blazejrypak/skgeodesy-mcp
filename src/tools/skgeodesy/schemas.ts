@@ -12,7 +12,6 @@ export const PersonName = z.string().describe('Full name of the person with his 
 export const Owner = z.object({
   people: z.array(PersonName).default([]),
   share: z.string().min(1).describe("Podiel, napr. '1/1' alebo '1/2'"),
-  maritalProperty: z.string().describe('Bezpodielové spoluvlastníctvo manželov vs. oddelené')
 });
 
 /** ---- Ťarchy ---- */
@@ -47,13 +46,13 @@ export const Parcel = z.object({
 });
 
 export const Header = z.object({
-  districtCode: z.string().nullable().describe("např. '507'"), // např. "507"
-  districtName: z.string().nullable().describe("napr. 'Námestovo'"), // "Námestovo"
-  municipalityCode: z.string().nullable().describe("napr. '510203'"), // "510203"
-  municipalityName: z.string().nullable().describe("napr. 'Zákamenné'"), // "Zákamenné"
-  cadastralAreaCode: z.string().nullable().describe("napr. '871940'"), // "871940"
-  cadastralAreaName: z.string().nullable().describe("napr. 'Zákamenné'"), // "Zákamenné"
-  titleDeedNumber: z.string().min(1).describe("napr. '1354'") // "1354"
+  districtCode: z.any().nullable().describe("např. '507'")  , // např. "507"
+  districtName: z.any().nullable().describe("napr. 'Námestovo'"), // "Námestovo"
+  municipalityCode: z.any().nullable().describe("napr. '510203'"), // "510203"
+  municipalityName: z.any().nullable().describe("napr. 'Zákamenné'"), // "Zákamenné"
+  cadastralAreaCode: z.any().nullable().describe("napr. '871940'"), // "871940"
+  cadastralAreaName: z.any().nullable().describe("napr. 'Zákamenné'"), // "Zákamenné"
+  titleDeedNumber: z.any()// "1354"
 });
 
 /** ---- Rýchle štatistiky pre prvú stranu ---- */

@@ -81,10 +81,10 @@
 
       /* odd parcels white, even parcels gray */
       .parcel-row.odd,
-      .encumbrance-row.odd { background-color: #ffffff; }
+      .encumbrance-row.odd { background-color: #ececec; }
 
       .parcel-row.even,
-      .encumbrance-row.even { background-color: #f9fafb; }
+      .encumbrance-row.even { background-color: #ffffff; }
 
       
     </style>
@@ -104,7 +104,7 @@
           width: 200,
           height: 200,
           colorDark: "#000000",
-          colorLight: "#ffffff",
+          colorLight: i % 2 === 0 ? "#ffffff" : "#ececec",
           correctLevel: QRCode.CorrectLevel.M,
         });
     });
@@ -187,9 +187,9 @@
               </dd>
             </div>
             <div>
-              <dt class="text-gray-500">Obec / Okres</dt>
+              <dt class="text-gray-500">Názov samosprávy</dt>
               <dd class="font-medium">
-                {{ header.cadastralAreaName }} / {{ header.districtName }}
+                {{ header.municipalityName }}
               </dd>
             </div>
           </dl>
@@ -205,7 +205,7 @@
       <!-- Quick stats -->
       <section class="mt-5">
         <h2 class="sr-only">Kľúčové štatistiky</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-3">
           <div class="rounded-xl border p-3">
             <div class="text-xs text-gray-500">Počet parciel</div>
             <div class="mt-1 text-lg font-semibold tabular-nums">{{ quickStats.parcelCount }}</div>
@@ -222,10 +222,10 @@
               {{ quickStats.structureCount }}
             </div>
           </div>
-          <div class="rounded-xl border p-3">
+          {{!-- <div class="rounded-xl border p-3">
             <div class="text-xs text-gray-500">Počet unikátnych vlastníkov</div>
             <div class="mt-1 text-lg font-semibold tabular-nums">{{ quickStats.ownerCount }}</div>
-          </div>
+          </div> --}}
         </div>
       </section>
 
@@ -240,7 +240,7 @@
                 <th class="px-3 py-2 text-center font-medium">Výmera</th>
                 <th class="px-3 py-2 text-center font-medium">Druh pozemku</th>
                 <th class="px-3 py-2 text-center font-medium">Využitie</th>
-                <th class="px-3 py-2 text-center font-medium">Stavby</th>
+                {{!-- <th class="px-3 py-2 text-center font-medium">Stavby</th> --}}
                 <th class="px-3 py-2 text-center font-medium">Vlastníci</th>
                 <th class="px-3 py-2 text-center font-medium">Kataster mapka</th>
               </tr>
@@ -252,12 +252,12 @@
                 <td class="px-3 py-2 tabular-nums whitespace-nowrap align-top">{{~areaM2~}} m²</td>
                 <td class="px-3 py-2 align-top">{{~landUseType~}}</td>
                 <td class="px-3 py-2 align-top leading-relaxed break-words">{{~landUseText~}}</td>
-                <td class="px-3 py-2 align-top">
+                {{!-- <td class="px-3 py-2 align-top">
                   {{#each structures}}
                   <ul class="list-disc pl-5 space-y-0.5">
                     {{#each structures}}<li>{{~description~}}</li>{{/each}}
                   </ul>
-                  {{/each}}</td>
+                  {{/each}}</td> --}}
                 <td class="px-3 py-2 align-top">
                   {{#if owners.length}}
                     <ul class="list-disc pl-5 space-y-0.5 text-left text-sm">
@@ -277,7 +277,7 @@
                   </td>
               </tr>
                 <tr class="encumbrance-row {{parity @index}}  avoid-break border-b">
-                  <td colspan="4" class="px-3 py-2">
+                  {{!-- <td colspan="4" class="px-3 py-2">
                     <div class="text-xs text-gray-700 text-left">
               {{#if encumbrances.length}}
                       <strong class="pl-1">Ťarchy:</strong>
@@ -288,9 +288,10 @@
                       </ul>
                 {{/if}}
                     </div>
-                  </td>
-                  <td colspan="3" class="px-3 py-2 flex justify-center">
-                    <img src="{{~imagePreviewURL~}}" alt="Mapa parcely" class="w-auto h-auto">
+                  </td> --}}
+                  <td colspan="7" class="px-3 py-2 text-center" style="height: 200px;">
+                    <div class="image-preview rounded-md" style="background: url('{{imagePreviewURL}}&size=600,150') no-repeat center center; width: 100%; height: 100%; background-size: contain;">
+                    </div>
                   </td>
                 </tr>
               {{/each}}

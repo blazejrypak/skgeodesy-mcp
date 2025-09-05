@@ -13,6 +13,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const getMetaDataJSONUrl = (cadastralUnitCode: string, parcelNumber: string) => {
+    return `$select=Id,ValidTo,No,Area,Extent&$expand=OwnershipType($select=Name,Code),CadastralUnit($select=Name,Code),Localization($select=Name),Municipality($select=Name),LandUse($select=Name),SharedProperty($select=Name),Affiliation($select=Name),Folio($select=Id,No,CountOfParcelsC),Utilisation($select=Name),Status($select=Code)&$filter=CadastralUnit/Code%20eq%20${cadastralUnitCode}%20and%20No%20eq%20%27${parcelNumber}%27&callback=ng_jsonp_callback_5`
+}
+
 const createCadastrialUnitCodeUrl = (city: string) => {
     return `${MAPKA_API_SUGGEST_URL}?q=${encodeURIComponent(removeAccents(city))}`;
 };
@@ -23,7 +27,7 @@ const createMapkaURL = (cadastralUnitCode: string, parcelNumber: string, parcelT
 
 const createCKNCadastrialMetadataURL = (cadastralUnitCode: string, parcelNumber: string) => {
     return (
-        `${CADASTRIAL_API_URL_CKNParcels_Metadata}?$select=No,Extent&$expand=Folio($select=No)&$filter=CadastralUnit/Code%20eq%20${cadastralUnitCode}%20and%20No%20eq%20%27${parcelNumber}%27&callback=ng_jsonp_callback_4`
+        `${CADASTRIAL_API_URL_CKNParcels_Metadata}?${getMetaDataJSONUrl(cadastralUnitCode, parcelNumber)}`
     );
 };
 
@@ -33,7 +37,7 @@ const createCKNCadastrialURL = (cadastralUnitCode: string, parcelNumber: string)
 
 const createEKNCadastrialMetadataURL = (cadastralUnitCode: string, parcelNumber: string) => {
     return (
-        `${CADASTRIAL_API_URL_EKNParcels}?$select=No,Extent&$expand=Folio($select=No)&$filter=CadastralUnit/Code%20eq%20${cadastralUnitCode}%20and%20NoFull%20eq%20%27${parcelNumber}%27&callback=ng_jsonp_callback_1`
+        `${CADASTRIAL_API_URL_EKNParcels}?${getMetaDataJSONUrl(cadastralUnitCode, parcelNumber)}`
     );
 };
 

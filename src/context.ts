@@ -16,17 +16,16 @@
 
 import debug from 'debug';
 import * as playwright from 'playwright';
-import OpenAI from 'openai';
 
-import { logUnhandledError } from './utils/log.js';
+import { outputFile } from './config.js';
 import { Tab } from './tab.js';
-import { outputFile  } from './config.js';
+import { logUnhandledError } from './utils/log.js';
 
-import type { FullConfig } from './config.js';
-import type { Tool } from './tools/tool.js';
-import type { BrowserContextFactory, ClientInfo } from './browserContextFactory.js';
 import type * as actions from './actions.js';
+import type { BrowserContextFactory, ClientInfo } from './browserContextFactory.js';
+import type { FullConfig } from './config.js';
 import type { SessionLog } from './sessionLog.js';
+import type { Tool } from './tools/tool.js';
 
 const testDebug = debug('pw:mcp:test');
 
@@ -43,7 +42,6 @@ export class Context {
   readonly config: FullConfig;
   readonly sessionLog: SessionLog | undefined;
   readonly options: ContextOptions;
-  readonly openaiClient: OpenAI;
   private _browserContextPromise: Promise<{ browserContext: playwright.BrowserContext, close: () => Promise<void> }> | undefined;
   private _browserContextFactory: BrowserContextFactory;
   private _tabs: Tab[] = [];
@@ -65,9 +63,6 @@ export class Context {
     this.options = options;
     this._browserContextFactory = options.browserContextFactory;
     this._clientInfo = options.clientInfo;
-    
-    // Initialize OpenAI client (API key is guaranteed to be present)
-    this.openaiClient = new OpenAI({ apiKey: this.config.openaiApiKey });
     
     testDebug('create context');
     Context._allContexts.add(this);

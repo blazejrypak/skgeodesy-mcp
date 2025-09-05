@@ -65,9 +65,7 @@ export const getCadastrialUnitCode = async (city: string, toolParams: ToolParams
   return cadastralUnitCode;
 };
 
-const matchMetaDataJSON = new RegExp('"value"\\s*:\\s*(\\[[\\s\\S]*?\\])', 'g');
-
-export const getMetaDataJSON = async (
+export const fetchJson = async (
   url: string,
   toolParams: ToolParams
 ): Promise<any> => {
@@ -77,27 +75,36 @@ export const getMetaDataJSON = async (
     maxRedirects: 0
   });
 
-  const text = await r.text() ?? '';
-  // group 1 is the JSON
-  const match = text.match(matchMetaDataJSON);
-  if (!match) {
-    throw new Error('No JSON found');
-  }
-  const json = `{${match[0]}}`;
+  return await r.json();
+};
+
+export const getMetadata = async (
+  url: string,
+  toolParams: ToolParams
+): Promise<any> => {
+  const { context } = toolParams;
+  const tab = await context.ensureTab();
+  const r = await tab.page.request.get(url, {
+    maxRedirects: 0
+  });
+
+  let text = await r.text() ?? '';
+  text = text.split(',').slice(1).join();
+  text = text.slice(0, text.length - 2);
+  const json = `{${text}}`;
   const data = JSON.parse(json)?.value?.[0] ?? {};
 
   return data;
 };
 
-export const createParcelImagePreviewURL = (extent: { Xmin: number, Ymin: number, Xmax: number, Ymax: number }, parcelType: 'C' | 'E') => {
-  const layerDefs = parcelType === 'C' ? '0:(ID IN (473294351))' : '0:(ID IN (473426700))';
-  return `https://kataster.skgeodesy.sk/eskn/rest/services/VRM/parcels_${parcelType.toLowerCase()}_view/MapServer/export?dpi=96&transparent=true&format=png8&bbox=${extent.Xmin},${extent.Ymin},${extent.Xmax},${extent.Ymax}&size=300,150&layerDefs=${layerDefs}&f=image`
+export const createParcelImagePreviewURL = (extent: { Xmin: number, Ymin: number, Xmax: number, Ymax: number }, parcelType: 'C' | 'E', id: number) => {
+  return `https://kataster.skgeodesy.sk/eskn/rest/services/VRM/parcels_${parcelType.toLowerCase()}_view/MapServer/export?dpi=96&transparent=true&format=png8&bbox=${extent.Xmin},${extent.Ymin},${extent.Xmax},${extent.Ymax}&layerDefs=0:(ID IN (${id}))&f=image`
 }
 
 export const getParcelInfo = async (
   url: string,
   toolParams: ToolParams
-): Promise<{ html: string; text: string }> => {
+): Promise<string> => {
   const { context } = toolParams;
   const tab = await context.ensureTab();
   const r = await tab.page.request.get(url, {
@@ -106,13 +113,7 @@ export const getParcelInfo = async (
 
   const html = await r.text();
   const root = parse(html);
-  const bodyContent = root.querySelector('body')?.innerText || '';
-  const bodyHtml = root.querySelector('body')?.innerHTML || '';
-
-  return {
-    html: bodyHtml,
-    text: bodyContent
-  };
+  return root.querySelector('body')?.innerHTML || '';
 };
 
 export const getParcelInfoFullHtml = async (

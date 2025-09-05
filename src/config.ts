@@ -38,7 +38,6 @@ export type CLIOptions = {
   ignoreHttpsErrors?: boolean;
   isolated?: boolean;
   imageResponses?: 'allow' | 'omit';
-  openaiApiKey?: string;
   sandbox?: boolean;
   outputDir?: string;
   port?: number;
@@ -70,7 +69,6 @@ const defaultConfig: FullConfig = {
   },
   server: {},
   saveTrace: false,
-  openaiApiKey: '', // Will be validated later
 };
 
 type BrowserUserConfig = NonNullable<Config['browser']>;
@@ -84,7 +82,6 @@ export type FullConfig = Config & {
   network: NonNullable<Config['network']>,
   saveTrace: boolean;
   server: NonNullable<Config['server']>,
-  openaiApiKey: string;
 };
 
 export async function resolveConfig(config: Config): Promise<FullConfig> {
@@ -99,11 +96,6 @@ export async function resolveCLIConfig(cliOptions: CLIOptions): Promise<FullConf
   result = mergeConfig(result, configInFile);
   result = mergeConfig(result, envOverrides);
   result = mergeConfig(result, cliOverrides);
-  
-  // Validate that OpenAI API key is provided
-  if (!result.openaiApiKey) {
-    throw new Error('OpenAI API key is required. Please provide it using --openai-api-key option, MCP_OPENAI_API_KEY environment variable, or in your config file.');
-  }
   
   return result;
 }
@@ -201,7 +193,6 @@ export function configFromCLIOptions(cliOptions: CLIOptions): Config {
     saveTrace: cliOptions.saveTrace,
     outputDir: cliOptions.outputDir,
     imageResponses: cliOptions.imageResponses,
-    openaiApiKey: cliOptions.openaiApiKey || '',
   };
 
   return result;
@@ -234,13 +225,12 @@ function configFromEnv(): Config {
   options.userAgent = envToString(process.env.PLAYWRIGHT_MCP_USER_AGENT);
   options.userDataDir = envToString(process.env.PLAYWRIGHT_MCP_USER_DATA_DIR);
   options.viewportSize = envToString(process.env.PLAYWRIGHT_MCP_VIEWPORT_SIZE);
-  options.openaiApiKey = envToString(process.env.MCP_OPENAI_API_KEY);
   return configFromCLIOptions(options);
 }
 
 async function loadConfig(configFile: string | undefined): Promise<Config> {
   if (!configFile)
-    return { openaiApiKey: '' };
+    return {};
 
   try {
     return JSON.parse(await fs.promises.readFile(configFile, 'utf8'));

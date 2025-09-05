@@ -9,3 +9,5 @@ playwright-report/
 .env
 sessions/
 .npmrc
+test-output.html
+allTitleDeeds.json
