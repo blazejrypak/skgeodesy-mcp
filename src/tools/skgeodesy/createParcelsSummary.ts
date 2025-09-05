@@ -2,6 +2,7 @@ import { zodTextFormat } from 'openai/helpers/zod';
 import z from 'zod';
 import { defineTool } from '../tool.js';
 import {
+  createParcelImagePreviewURL,
   generateHtml,
   getCadastrialUnitCode,
   getMetaDataJSON,
@@ -10,6 +11,7 @@ import {
 } from './helpers.js';
 import { ProcessedTitleDeed, processedTitleDeed, QuickStats } from './schemas.js';
 import {
+  createCKNCadastrialMetadataURL,
   createCKNCadastrialURL,
   createEKNCadastrialMetadataURL,
   createEKNCadastrialURL,
@@ -35,6 +37,7 @@ interface ParcelInfo {
   text: string;
   html: string;
   processedTitleDeed?: ProcessedTitleDeed;
+  imagePreviewURL: string;
 }
 
 // First tool: Get parcel summary information
@@ -68,81 +71,136 @@ const createParcelsSummary = defineTool({
     let parcelsInfo: ParcelInfo[] = [];
 
     const CKNParcels = parcels.filter((parcel) => parcel.parcelType === 'C');
-
-    for (const parcel of CKNParcels) {
-      const url = createCKNCadastrialURL(cadastrialUnitCode, parcel.parcelNumber);
-      const { html, text } = await getParcelInfo(url, {
-        context,
-        params,
-        response
-      });
-      const mapkaURL = createMapkaURL(cadastrialUnitCode, parcel.parcelNumber, parcel.parcelType);
-
-      parcelsInfo.push({
-        parcelNumber: parcel.parcelNumber,
-        parcelType: parcel.parcelType,
-        mapkaURL: mapkaURL,
-        text: text,
-        html: html
-      });
-    }
-
     const EKNParcels = parcels.filter((parcel) => parcel.parcelType === 'E');
 
-    for (const parcel of EKNParcels) {
-      const metaDataUrl = createEKNCadastrialMetadataURL(cadastrialUnitCode, parcel.parcelNumber);
-      const metaData = await getMetaDataJSON(metaDataUrl, {
-        context,
-        params,
-        response
-      });
-      if (!metaData?.Folio?.No) {
-        response.addError('No folio number found for parcel' + parcel.parcelType + ' ' + parcel.parcelNumber );
-        continue;
-      }
-      const url = createEKNCadastrialURL(cadastrialUnitCode, parcel.parcelNumber, metaData.Folio.No);
-      const { html, text } = await getParcelInfo(url, {
-        context,
-        params,
-        response
-      });
+    const cknParcelsInfoPromises = CKNParcels.map(async (parcel) => {
+      try {
+        const metaDataUrl = createCKNCadastrialMetadataURL(cadastrialUnitCode, parcel.parcelNumber);
+        const metaData = await getMetaDataJSON(metaDataUrl, {
+          context,
+          params,
+          response
+        });
+        const url = createCKNCadastrialURL(cadastrialUnitCode, parcel.parcelNumber);
+        const { html, text } = await getParcelInfo(url, {
+          context,
+          params,
+          response
+        });
 
-      const mapkaURL = createMapkaURL(cadastrialUnitCode, parcel.parcelNumber, parcel.parcelType);
-
-      parcelsInfo.push({
-        parcelNumber: parcel.parcelNumber,
-        parcelType: parcel.parcelType,
-        mapkaURL: mapkaURL,
-        text: text,
-        html: html
-      });
-    }
-
-    for (const parcelInfo of parcelsInfo) {
-      const response = await context.openaiClient.responses.parse({
-        model: 'gpt-4o-mini',
-        input: [
-          {
-            role: 'system',
-            content: `You are an expert at structured data extraction. 
-            You will be given unstructured text from a research paper and should convert it into the given structure.`
-          },
-          { role: 'user', content: parcelInfo.text }
-        ],
-        text: {
-          format: zodTextFormat(processedTitleDeed, 'processedTitleDeed')
+        if (text.includes('Portál elektronických služieb')) {
+          response.addError('Nepodarilo sa získať informácie o parcely CKN ' + parcel.parcelNumber);
+          return null;
         }
-      });
-      parcelInfo.processedTitleDeed = response.output_parsed!;
-    }
+        
+        const mapkaURL = createMapkaURL(cadastrialUnitCode, parcel.parcelNumber, parcel.parcelType);
+        const imagePreviewURL = createParcelImagePreviewURL(metaData.Extent, parcel.parcelType);
+        return {
+          parcelNumber: parcel.parcelNumber,
+          parcelType: parcel.parcelType,
+          mapkaURL: mapkaURL,
+          text: text,
+          html: html,
+          imagePreviewURL: imagePreviewURL
+        };
+      } catch (error) {
+        response.addError(
+          `Failed to process CKN parcel ${parcel.parcelNumber}: ${(error as Error).message}`
+        );
+        return null;
+      }
+    });
+
+    const eknParcelsInfoPromises = EKNParcels.map(async (parcel) => {
+      try {
+        const metaDataUrl = createEKNCadastrialMetadataURL(cadastrialUnitCode, parcel.parcelNumber);
+        const metaData = await getMetaDataJSON(metaDataUrl, {
+          context,
+          params,
+          response
+        });
+        if (!metaData?.Folio?.No) {
+          response.addError(
+            'No folio number found for parcel' + parcel.parcelType + ' ' + parcel.parcelNumber
+          );
+          return null;
+        }
+        const url = createEKNCadastrialURL(
+          cadastrialUnitCode,
+          parcel.parcelNumber,
+          metaData.Folio.No
+        );
+        const { html, text } = await getParcelInfo(url, {
+          context,
+          params,
+          response
+        });
+
+        if (text.includes('Portál elektronických služieb')) {
+          response.addError('Nepodarilo sa získať informácie o parcely EKN ' + parcel.parcelNumber);
+          return null;
+        }
+
+        const imagePreviewURL = createParcelImagePreviewURL(metaData.Extent, parcel.parcelType);
+
+        const mapkaURL = createMapkaURL(cadastrialUnitCode, parcel.parcelNumber, parcel.parcelType);
+        return {
+          parcelNumber: parcel.parcelNumber,
+          parcelType: parcel.parcelType,
+          mapkaURL: mapkaURL,
+          text: text,
+          html: html,
+          imagePreviewURL: imagePreviewURL
+        };
+      } catch (error) {
+        response.addError(
+          `Failed to process EKN parcel ${parcel.parcelNumber}: ${(error as Error).message}`
+        );
+        return null;
+      }
+    });
+
+    const cknParcelsInfo = (await Promise.all(cknParcelsInfoPromises)).filter(
+      (p) => p !== null
+    ) as ParcelInfo[];
+    const eknParcelsInfo = (await Promise.all(eknParcelsInfoPromises)).filter(
+      (p) => p !== null
+    ) as ParcelInfo[];
+
+    parcelsInfo = [...cknParcelsInfo, ...eknParcelsInfo];
+
+    const parsingPromises = parcelsInfo.map((parcelInfo) =>
+      context.openaiClient.responses
+        .parse({
+          model: 'gpt-4o-mini',
+          input: [
+            {
+              role: 'system',
+              content: `You are an expert at structured data extraction. 
+            You will be given unstructured text from a research paper and should convert it into the given structure.`
+            },
+            { role: 'user', content: parcelInfo.text }
+          ],
+          text: {
+            format: zodTextFormat(processedTitleDeed, 'processedTitleDeed')
+          }
+        })
+        .then((response) => {
+          parcelInfo.processedTitleDeed = response.output_parsed!;
+        })
+        .catch((error) => {
+          response.addError(
+            `Failed to parse title deed for parcel ${parcelInfo.parcelNumber}: ${(error as Error).message}`
+          );
+          parcelInfo.processedTitleDeed = undefined;
+        })
+    );
+
+    await Promise.all(parsingPromises);
 
     const processedTitleDeeds = parcelsInfo
       .map((parcel) => parcel.processedTitleDeed!)
       .filter(Boolean);
-
-    // save to file processedTitleDeeds
-    const fileName = `processedTitleDeeds-${new Date().toISOString()}.json`;
-    saveParsedJsonToFile(processedTitleDeeds, fileName);
 
     const quickStats: QuickStats = processedTitleDeeds.reduce<QuickStats>(
       (acc, parcel) => {
@@ -164,10 +222,15 @@ const createParcelsSummary = defineTool({
 
     const header = processedTitleDeeds[0].header;
     const _parcels = processedTitleDeeds.map((titleDeed) => ({
+      ...titleDeed.parcel,
+      mapkaURL: parcelsInfo.find((parcel) => parcel.parcelNumber === titleDeed.parcel.parcelNumber)
+        ?.mapkaURL!,
+      imagePreviewURL: parcelsInfo.find(
+        (parcel) => parcel.parcelNumber === titleDeed.parcel.parcelNumber
+      )?.imagePreviewURL!,
       structures: titleDeed.structures,
       owners: titleDeed.owners,
-      encumbrances: titleDeed.encumbrances,
-      ...titleDeed.parcel
+      encumbrances: titleDeed.encumbrances
     }));
 
     const allTitleDeeds = {
@@ -175,6 +238,9 @@ const createParcelsSummary = defineTool({
       quickStats,
       parcels: _parcels
     };
+
+    const fileName = `allTitleDeeds.json`;
+    saveParsedJsonToFile(allTitleDeeds, fileName);
 
     const generatedHtml = generateHtml({
       ...allTitleDeeds,

@@ -65,7 +65,7 @@ export const getCadastrialUnitCode = async (city: string, toolParams: ToolParams
   return cadastralUnitCode;
 };
 
-const matchMetaDataJSON = new RegExp('"value"\s*:\s*(\[[\s\S]*?\])');
+const matchMetaDataJSON = new RegExp('"value"\\s*:\\s*(\\[[\\s\\S]*?\\])', 'g');
 
 export const getMetaDataJSON = async (
   url: string,
@@ -77,16 +77,22 @@ export const getMetaDataJSON = async (
     maxRedirects: 0
   });
 
-  const text = await r.text();
+  const text = await r.text() ?? '';
   // group 1 is the JSON
-  const json = text.match(matchMetaDataJSON)?.[1];
-  if (!json) {
+  const match = text.match(matchMetaDataJSON);
+  if (!match) {
     throw new Error('No JSON found');
   }
-  const data = JSON.parse(json)?.[0] ?? {};
+  const json = `{${match[0]}}`;
+  const data = JSON.parse(json)?.value?.[0] ?? {};
 
   return data;
 };
+
+export const createParcelImagePreviewURL = (extent: { Xmin: number, Ymin: number, Xmax: number, Ymax: number }, parcelType: 'C' | 'E') => {
+  const layerDefs = parcelType === 'C' ? '0:(ID IN (473294351))' : '0:(ID IN (473426700))';
+  return `https://kataster.skgeodesy.sk/eskn/rest/services/VRM/parcels_${parcelType.toLowerCase()}_view/MapServer/export?dpi=96&transparent=true&format=png8&bbox=${extent.Xmin},${extent.Ymin},${extent.Xmax},${extent.Ymax}&size=300,150&layerDefs=${layerDefs}&f=image`
+}
 
 export const getParcelInfo = async (
   url: string,
@@ -100,7 +106,7 @@ export const getParcelInfo = async (
 
   const html = await r.text();
   const root = parse(html);
-  const bodyContent = root.querySelector('body')?.textContent || '';
+  const bodyContent = root.querySelector('body')?.innerText || '';
   const bodyHtml = root.querySelector('body')?.innerHTML || '';
 
   return {

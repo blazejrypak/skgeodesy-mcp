@@ -2,6 +2,7 @@ import fs from 'fs';
 import removeAccents from 'remove-accents';
 import {
     CADASTRIAL_API_URL_CKNParcels,
+    CADASTRIAL_API_URL_CKNParcels_Metadata,
     CADASTRIAL_API_URL_EKNParcels,
     MAPKA_API_SUGGEST_URL,
     MAPKA_BASE_URL
@@ -18,6 +19,12 @@ const createCadastrialUnitCodeUrl = (city: string) => {
 
 const createMapkaURL = (cadastralUnitCode: string, parcelNumber: string, parcelType: string) => {
     return `${MAPKA_BASE_URL}/mapka/sk/kataster/detail/kataster/parcela-${parcelType.toLowerCase()}/${cadastralUnitCode}/${parcelNumber.replace('/', '_')}`;
+};
+
+const createCKNCadastrialMetadataURL = (cadastralUnitCode: string, parcelNumber: string) => {
+    return (
+        `${CADASTRIAL_API_URL_CKNParcels_Metadata}?$select=No,Extent&$expand=Folio($select=No)&$filter=CadastralUnit/Code%20eq%20${cadastralUnitCode}%20and%20No%20eq%20%27${parcelNumber}%27&callback=ng_jsonp_callback_4`
+    );
 };
 
 const createCKNCadastrialURL = (cadastralUnitCode: string, parcelNumber: string) => {
@@ -49,4 +56,4 @@ export const saveParsedJsonToFile =  (json: any, fileName: string) => {
     fs.writeFileSync(path.join(process.cwd(), fileName), JSON.stringify(json, null, 2));
 };
 
-export { createCadastrialUnitCodeUrl, createCKNCadastrialURL, createEKNCadastrialURL, createEKNCadastrialMetadataURL, createMapkaURL, getPlainPdfTemplate };
+export { createCadastrialUnitCodeUrl, createCKNCadastrialURL, createEKNCadastrialURL, createEKNCadastrialMetadataURL, createMapkaURL, getPlainPdfTemplate, createCKNCadastrialMetadataURL };

@@ -93,7 +93,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="google" content="notranslate" />
     <meta name="googlebot" content="notranslate" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com"></script><script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>    
+    document.addEventListener('DOMContentLoaded', () => {
+    const nodes = document.querySelectorAll('.qrcode');
+
+    nodes.forEach((el, i) => {
+      new QRCode(el, {
+          text: el.dataset.url,
+          width: 200,
+          height: 200,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M,
+        });
+    });
+  });
+    </script>
     <style>
       @page {
         size: A4;
@@ -226,6 +242,7 @@
                 <th class="px-3 py-2 text-center font-medium">Využitie</th>
                 <th class="px-3 py-2 text-center font-medium">Stavby</th>
                 <th class="px-3 py-2 text-center font-medium">Vlastníci</th>
+                <th class="px-3 py-2 text-center font-medium">Kataster mapka</th>
               </tr>
             </thead>
             <tbody>
@@ -254,9 +271,13 @@
                     </ul>
                   {{else}}—{{/if}}
                   </td>
+                  <td class="px-3 p-2 align-top gap-3 flex flex-col">
+                    <div class="qrcode max-w-20" data-url="{{~mapkaURL~}}"></div>
+                    <a class="font-medium text-blue-600 dark:text-blue-500 underline" target="_blank" href="{{~mapkaURL~}}">Otvoriť mapku v katastri</a>
+                  </td>
               </tr>
                 <tr class="encumbrance-row {{parity @index}}  avoid-break border-b">
-                  <td colspan="6" class="px-3 py-2">
+                  <td colspan="4" class="px-3 py-2">
                     <div class="text-xs text-gray-700 text-left">
               {{#if encumbrances.length}}
                       <strong class="pl-1">Ťarchy:</strong>
@@ -267,6 +288,9 @@
                       </ul>
                 {{/if}}
                     </div>
+                  </td>
+                  <td colspan="3" class="px-3 py-2 flex justify-center">
+                    <img src="{{~imagePreviewURL~}}" alt="Mapa parcely" class="w-auto h-auto">
                   </td>
                 </tr>
               {{/each}}
