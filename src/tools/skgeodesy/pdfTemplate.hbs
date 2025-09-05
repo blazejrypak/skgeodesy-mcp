@@ -78,6 +78,15 @@
         font-size: 12pt;
         font-weight: bold;
       }
+
+      /* odd parcels white, even parcels gray */
+      .parcel-row.odd,
+      .encumbrance-row.odd { background-color: #ffffff; }
+
+      .parcel-row.even,
+      .encumbrance-row.even { background-color: #f9fafb; }
+
+      
     </style>
     <title>Výpis z listov vlastníctva</title>
 
@@ -107,7 +116,7 @@
         margin-right: auto;
         break-after: page;
       "
-      class="flex flex-col justify-center min-h-screen px-4"
+      class="flex flex-col justify-center min-h-screen px-4 pt-10"
     >
       <header class="grid grid-cols-5 items-start gap-4 border-b pb-4">
         <div class="flex items-center gap-2 rounded-xl w-48 h-16 pt-6 pr-4">
@@ -180,7 +189,7 @@
       <!-- Quick stats -->
       <section class="mt-5">
         <h2 class="sr-only">Kľúčové štatistiky</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           <div class="rounded-xl border p-3">
             <div class="text-xs text-gray-500">Počet parciel</div>
             <div class="mt-1 text-lg font-semibold tabular-nums">{{ quickStats.parcelCount }}</div>
@@ -198,31 +207,8 @@
             </div>
           </div>
           <div class="rounded-xl border p-3">
-            <div class="text-xs text-gray-500">Počet vlastníkov</div>
+            <div class="text-xs text-gray-500">Počet unikátnych vlastníkov</div>
             <div class="mt-1 text-lg font-semibold tabular-nums">{{ quickStats.ownerCount }}</div>
-          </div>
-          <div class="rounded-xl border p-3">
-            <div class="text-xs text-gray-500">Ťarchy</div>
-            {{#if quickStats.encumbrances }}
-            
-            <div
-              class="mt-1 inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 border border-green-200"
-            >
-              <ul>
-                {{#each quickStats.encumbrances.types~}}
-                <li>{{~.~}}</li>
-                {{~/each}}
-              </ul>
-            </div>
-
-
-            {{~else~}}
-            <div
-              class="mt-1 inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 border border-green-200"
-            >
-              Bez tiarch
-            </div>
-            {{/if}}
           </div>
         </div>
       </section>
@@ -231,58 +217,63 @@
       <section class="mt-6">
         <h2 class="text-sm font-semibold text-gray-700">Rýchly zoznam parciel</h2>
         <div class="mt-2 overflow-hidden rounded-xl border">
-          <table class="min-w-full divide-y divide-gray-200 text-sm">
-            <thead class="bg-gray-50">
-              <tr class="text-gray-500">
-                <th class="px-3 py-2 text-left font-medium">Parcelné číslo</th>
-                <th class="px-3 py-2 text-left font-medium">Výmera</th>
-                <th class="px-3 py-2 text-left font-medium">Druh pozemku</th>
-                <th class="px-3 py-2 text-left font-medium">Využitie</th>
+          <table class="min-w-full text-sm border-collapse">
+            <thead class="bg-blue-100">
+              <tr>
+                <th class="px-3 py-2 text-center font-medium">Parcelné číslo</th>
+                <th class="px-3 py-2 text-center font-medium">Výmera</th>
+                <th class="px-3 py-2 text-center font-medium">Druh pozemku</th>
+                <th class="px-3 py-2 text-center font-medium">Využitie</th>
+                <th class="px-3 py-2 text-center font-medium">Stavby</th>
+                <th class="px-3 py-2 text-center font-medium">Vlastníci</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
+            <tbody>
               {{#each parcels}}
-              <tr>
-                <td class="px-3 py-2 font-medium">{{~parcelType~}} - {{~parcelNumber~}}</td>
-                <td class="px-3 py-2 tabular-nums">{{~areaM2~}} m²</td>
-                <td class="px-3 py-2">{{~landUseType~}}</td>
-                <td class="px-3 py-2">{{~landUseText~}}</td>
+              <tr class="parcel-row {{parity @index}}  avoid-break align-top">
+                <td class="px-3 py-2 font-semibold whitespace-nowrap tabular-nums align-top">{{~parcelType~}}-{{~parcelNumber~}}</td>
+                <td class="px-3 py-2 tabular-nums whitespace-nowrap align-top">{{~areaM2~}} m²</td>
+                <td class="px-3 py-2 align-top">{{~landUseType~}}</td>
+                <td class="px-3 py-2 align-top leading-relaxed break-words">{{~landUseText~}}</td>
+                <td class="px-3 py-2 align-top">
+                  {{#each structures}}
+                  <ul class="list-disc pl-5 space-y-0.5">
+                    {{#each structures}}<li>{{~description~}}</li>{{/each}}
+                  </ul>
+                  {{/each}}</td>
+                <td class="px-3 py-2 align-top">
+                  {{#if owners.length}}
+                    <ul class="list-disc pl-5 space-y-0.5 text-left text-sm">
+                      {{#each owners}}
+                        <li>
+                          {{#each people}}
+                            <span class="font-medium">{{~.~}}</span>{{#unless @last}}, {{/unless}}
+                          {{/each}}
+                        </li>
+                      {{/each}}
+                    </ul>
+                  {{else}}—{{/if}}
+                  </td>
               </tr>
+                <tr class="encumbrance-row {{parity @index}}  avoid-break border-b">
+                  <td colspan="6" class="px-3 py-2">
+                    <div class="text-xs text-gray-700 text-left">
+              {{#if encumbrances.length}}
+                      <strong class="pl-1">Ťarchy:</strong>
+                      <ul class="list-decimal pl-6 space-y-0.5 leading-relaxed text-left">
+                        {{#each encumbrances}}
+                          <li>{{~.~}}</li>
+                        {{/each}}
+                      </ul>
+                {{/if}}
+                    </div>
+                  </td>
+                </tr>
               {{/each}}
             </tbody>
           </table>
         </div>
       </section>
-
-      {{#if structures }}
-      <!-- Structures -->
-      <section class="mt-6">
-        <h2 class="text-sm font-semibold text-gray-700">Stavby</h2>
-        <ul class="mt-2 space-y-2">
-          {{#each structures}}
-          <li class="rounded-xl border p-3 text-sm">
-            <span class="font-medium">{{~description~}}</span> – na parcele
-            <span class="font-medium">{{~onParcelId~}}</span>
-          </li>
-          {{/each}}
-        </ul>
-      </section>
-
-      <!-- Owners -->
-      <section class="mt-6">
-        <h2 class="text-sm font-semibold text-gray-700">Vlastníci</h2>
-        <ul class="mt-2 space-y-2">
-          {{#each owners}}
-          <li class="rounded-xl border p-3 text-sm">
-            {{#each people}}
-            <span class="font-medium">{{~.~}}</span>, {{/each}} ,
-            <span class="text-gray-600">{{~maritalProperty~}}</span>, podiel
-            <span class="tabular-nums">{{~share~}}</span>
-          </li>
-          {{/each}}
-        </ul>
-      </section>
-      {{/if}}
 
       <!-- Disclaimer -->
       <footer class="mt-8 border-t pt-4">

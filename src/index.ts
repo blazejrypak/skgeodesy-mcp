@@ -25,7 +25,9 @@ import type { BrowserContext } from 'playwright';
 import type { BrowserContextFactory } from './browserContextFactory.js';
 import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 
-export async function createConnection(userConfig: Config = {}, contextGetter?: () => Promise<BrowserContext>): Promise<Server> {
+export async function createConnection(userConfig: Config = {
+  openaiApiKey: process.env.MCP_OPENAI_API_KEY || ''
+}, contextGetter?: () => Promise<BrowserContext>): Promise<Server> {
   const config = await resolveConfig(userConfig);
   const factory = contextGetter ? new SimpleBrowserContextFactory(contextGetter) : contextFactory(config);
   return mcpServer.createServer('Playwright', packageJSON.version, new BrowserServerBackend(config, factory), false);

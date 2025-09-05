@@ -15,6 +15,19 @@ export const Owner = z.object({
   maritalProperty: z.string().describe('Bezpodielové spoluvlastníctvo manželov vs. oddelené')
 });
 
+/** ---- Ťarchy ---- */
+export const Encumbrance = z.string().nullable().describe('Ťarcha, ak existuje');
+
+export const Structure = z.object({
+  supisneCislo: z.string().min(1),
+  onParcelId: z.string().min(1),
+  structureKind: z
+    .string()
+    .nullable()
+    .describe("Druh stavby napr. 'Rodinný dom' alebo 'Ostatná stavba'"),
+  description: z.string().nullable().describe("napr. 'rod.dom'")
+});
+
 export const Parcel = z.object({
   parcelNumber: z.string().min(1).describe("Parcelné číslo, napr. '353/1'"),
   parcelType: z.enum(['C', 'E']).describe("Either 'C' (for CKN) or 'E' (for EKN) parcels"),
@@ -23,36 +36,23 @@ export const Parcel = z.object({
   areaM2: z.number().int().nonnegative(),
   landUseType: z
     .string()
-    .optional()
+    .nullable()
     .describe(
       "Druh pozemku napr. 'Lesný pozemok' alebo 'Záhradný pozemok' alebo 'Nezastavný pozemok' alebo 'Zastavný pozemok' alebo 'Ostatný pozemok'"
     ),
   landUseText: z
     .string()
-    .optional()
+    .nullable()
     .describe("Ľudský popis využitia, ak je dostupný napr. 'Pozemok s bytovou budovou' ")
 });
 
-export const Structure = z.object({
-  supisneCislo: z.string().min(1),
-  onParcelId: z.string().min(1),
-  structureKind: z
-    .string()
-    .optional()
-    .describe("Druh stavby napr. 'Rodinný dom' alebo 'Ostatná stavba'"),
-  description: z.string().optional().describe("napr. 'rod.dom'")
-});
-
-/** ---- Ťarchy ---- */
-export const Encumbrance = z.string().optional().describe('Ťarcha, ak existuje');
-
 export const Header = z.object({
-  districtCode: z.string().optional().describe("např. '507'"), // např. "507"
-  districtName: z.string().optional().describe("napr. 'Námestovo'"), // "Námestovo"
-  municipalityCode: z.string().optional().describe("napr. '510203'"), // "510203"
-  municipalityName: z.string().optional().describe("napr. 'Zákamenné'"), // "Zákamenné"
-  cadastralAreaCode: z.string().optional().describe("napr. '871940'"), // "871940"
-  cadastralAreaName: z.string().optional().describe("napr. 'Zákamenné'"), // "Zákamenné"
+  districtCode: z.string().nullable().describe("např. '507'"), // např. "507"
+  districtName: z.string().nullable().describe("napr. 'Námestovo'"), // "Námestovo"
+  municipalityCode: z.string().nullable().describe("napr. '510203'"), // "510203"
+  municipalityName: z.string().nullable().describe("napr. 'Zákamenné'"), // "Zákamenné"
+  cadastralAreaCode: z.string().nullable().describe("napr. '871940'"), // "871940"
+  cadastralAreaName: z.string().nullable().describe("napr. 'Zákamenné'"), // "Zákamenné"
   titleDeedNumber: z.string().min(1).describe("napr. '1354'") // "1354"
 });
 
@@ -61,22 +61,33 @@ export const QuickStats = z.object({
   parcelCount: z.number().int().nonnegative(),
   totalAreaM2: z.number().int().nonnegative(),
   structureCount: z.number().int().nonnegative(),
-  ownerCount: z.number().int().positive(),
-  encumbrances: z.object({
-    hasAny: z.boolean(),
-    types: z.array(Encumbrance).default([])
-  })
+  ownerCount: z.number().int().positive()
+});
+
+export const processedTitleDeed = z.object({
+  header: Header,
+  parcel: Parcel,
+  structures: z.array(Structure).default([]),
+  owners: z.array(Owner).min(1),
+  encumbrances: z.array(Encumbrance).default([])
 });
 
 /** ---- Hlavný sumár pre prvú stranu ---- */
-export const parsedTitleDeeds = z
+export const titleDeedsForSummary = z
   .object({
     header: Header,
     quickStats: QuickStats,
-    parcels: z.array(Parcel).min(1),
-    structures: z.array(Structure).default([]),
-    owners: z.array(Owner).min(1),
-    encumbrances: z.array(Encumbrance).default([])
+    parcels: z
+      .array(
+        z
+          .object({
+            structures: z.array(Structure).default([]),
+            owners: z.array(Owner).min(1),
+            encumbrances: z.array(Encumbrance).default([])
+          })
+          .extend(Parcel.shape)
+      )
+      .min(1),
   })
   .superRefine((data, ctx) => {
     // jednoduchá kontrola konzistencie výmery
@@ -88,13 +99,13 @@ export const parsedTitleDeeds = z
         path: ['quickStats', 'totalAreaM2']
       });
     }
-    // flag pre ťarchy
-    const hasAny = data.encumbrances.length > 0;
-    if (hasAny !== data.quickStats.encumbrances.hasAny) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: `encumbrances.hasAny (${data.quickStats.encumbrances.hasAny}) nekorešponduje s počtom záznamov (${data.encumbrances.length}).`,
-        path: ['quickStats', 'encumbrances', 'hasAny']
-      });
-    }
   });
+
+export type TitleDeedsForSummary = z.infer<typeof titleDeedsForSummary>;
+export type QuickStats = z.infer<typeof QuickStats>;
+export type Header = z.infer<typeof Header>;
+export type Parcel = z.infer<typeof Parcel>;
+export type Structure = z.infer<typeof Structure>;
+export type Owner = z.infer<typeof Owner>;
+export type Encumbrance = z.infer<typeof Encumbrance>;
+export type ProcessedTitleDeed = z.infer<typeof processedTitleDeed>;
