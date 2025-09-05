@@ -1,6 +1,6 @@
 {
   "name": "skgeodesy-mcp",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "MCP server and Chrome extension for accessing Slovak cadastre (skgeodesy.sk)",
   "type": "module",
   "repository": {
