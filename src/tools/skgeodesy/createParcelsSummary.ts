@@ -4,12 +4,14 @@ import { defineTool } from '../tool.js';
 import {
   generateHtml,
   getCadastrialUnitCode,
+  getMetaDataJSON,
   getParcelInfo,
   initializeBrowser
 } from './helpers.js';
 import { ProcessedTitleDeed, processedTitleDeed, QuickStats } from './schemas.js';
 import {
   createCKNCadastrialURL,
+  createEKNCadastrialMetadataURL,
   createEKNCadastrialURL,
   createMapkaURL,
   saveParsedJsonToFile
@@ -88,7 +90,17 @@ const createParcelsSummary = defineTool({
     const EKNParcels = parcels.filter((parcel) => parcel.parcelType === 'E');
 
     for (const parcel of EKNParcels) {
-      const url = createEKNCadastrialURL(cadastrialUnitCode, parcel.parcelNumber);
+      const metaDataUrl = createEKNCadastrialMetadataURL(cadastrialUnitCode, parcel.parcelNumber);
+      const metaData = await getMetaDataJSON(metaDataUrl, {
+        context,
+        params,
+        response
+      });
+      if (!metaData?.Folio?.No) {
+        response.addError('No folio number found for parcel' + parcel.parcelType + ' ' + parcel.parcelNumber );
+        continue;
+      }
+      const url = createEKNCadastrialURL(cadastrialUnitCode, parcel.parcelNumber, metaData.Folio.No);
       const { html, text } = await getParcelInfo(url, {
         context,
         params,
@@ -124,7 +136,9 @@ const createParcelsSummary = defineTool({
       parcelInfo.processedTitleDeed = response.output_parsed!;
     }
 
-    const processedTitleDeeds = parcelsInfo.map((parcel) => parcel.processedTitleDeed!).filter(Boolean);
+    const processedTitleDeeds = parcelsInfo
+      .map((parcel) => parcel.processedTitleDeed!)
+      .filter(Boolean);
 
     // save to file processedTitleDeeds
     const fileName = `processedTitleDeeds-${new Date().toISOString()}.json`;
@@ -144,7 +158,7 @@ const createParcelsSummary = defineTool({
         parcelCount: 0,
         totalAreaM2: 0,
         structureCount: 0,
-        ownerCount: 0,
+        ownerCount: 0
       }
     );
 

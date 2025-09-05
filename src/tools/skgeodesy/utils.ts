@@ -24,14 +24,15 @@ const createCKNCadastrialURL = (cadastralUnitCode: string, parcelNumber: string)
     return `${CADASTRIAL_API_URL_CKNParcels}?cadastralUnitCode=${encodeURIComponent(cadastralUnitCode)}&filter=parcelsC:${encodeURIComponent(parcelNumber)};&outputType=html`;
 };
 
-const createEKNCadastrialURL = (cadastralUnitCode: string, parcelNumber: string) => {
+const createEKNCadastrialMetadataURL = (cadastralUnitCode: string, parcelNumber: string) => {
     return (
-        `${CADASTRIAL_API_URL_EKNParcels}?$select=Id,ValidTo,No,NoFull,Area,Extent` +
-        '&$expand=OwnershipType($select=Name,Code),CadastralUnit($select=Name,Code),Localization($select=Name),Municipality($select=Name),' +
-        'LandUse($select=Name),SharedProperty($select=Name),Folio($select=Id,No,CountOfParcelsE),Status($select=Code),OriginalCadastralUnit($select=Name,Code,Value)' +
-        `&$filter=CadastralUnit/Code%20eq%20${cadastralUnitCode}%20and%20NoFull%20eq%20%27${parcelNumber}%27&callback=ng_jsonp_callback_1`
+        `${CADASTRIAL_API_URL_EKNParcels}?$select=No,Extent&$expand=Folio($select=No)&$filter=CadastralUnit/Code%20eq%20${cadastralUnitCode}%20and%20NoFull%20eq%20%27${parcelNumber}%27&callback=ng_jsonp_callback_1`
     );
 };
+
+const createEKNCadastrialURL = (cadastralUnitCode: string, parcelNumber: string, prfNumber: string) => {
+    return `${CADASTRIAL_API_URL_CKNParcels}?prfNumber=${encodeURIComponent(prfNumber)}&cadastralUnitCode=${encodeURIComponent(cadastralUnitCode)}&filter=parcelsE:${encodeURIComponent(parcelNumber)};&outputType=html`;
+}
 
 const getPlainPdfTemplate = () => {
     return fs.readFileSync(path.join(__dirname, 'pdfTemplate.hbs'), 'utf8');
@@ -48,5 +49,4 @@ export const saveParsedJsonToFile =  (json: any, fileName: string) => {
     fs.writeFileSync(path.join(process.cwd(), fileName), JSON.stringify(json, null, 2));
 };
 
-export { createCadastrialUnitCodeUrl, createCKNCadastrialURL, createEKNCadastrialURL, createMapkaURL, getPlainPdfTemplate };
-
+export { createCadastrialUnitCodeUrl, createCKNCadastrialURL, createEKNCadastrialURL, createEKNCadastrialMetadataURL, createMapkaURL, getPlainPdfTemplate };

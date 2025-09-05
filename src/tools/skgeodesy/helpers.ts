@@ -65,6 +65,29 @@ export const getCadastrialUnitCode = async (city: string, toolParams: ToolParams
   return cadastralUnitCode;
 };
 
+const matchMetaDataJSON = new RegExp('"value"\s*:\s*(\[[\s\S]*?\])');
+
+export const getMetaDataJSON = async (
+  url: string,
+  toolParams: ToolParams
+): Promise<any> => {
+  const { context } = toolParams;
+  const tab = await context.ensureTab();
+  const r = await tab.page.request.get(url, {
+    maxRedirects: 0
+  });
+
+  const text = await r.text();
+  // group 1 is the JSON
+  const json = text.match(matchMetaDataJSON)?.[1];
+  if (!json) {
+    throw new Error('No JSON found');
+  }
+  const data = JSON.parse(json)?.[0] ?? {};
+
+  return data;
+};
+
 export const getParcelInfo = async (
   url: string,
   toolParams: ToolParams
